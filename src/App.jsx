@@ -15,10 +15,10 @@ const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Simulate initial loading
+    // Minimum display time agar animasi bunga sempat bloom penuh
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2500);
+    }, 2800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -58,8 +58,8 @@ const App = () => {
 
   return (
     <div className="min-h-screen font-sans bg-white text-slate-800 scroll-smooth">
-      <AnimatePresence>
-        {loading && <FlowerLoader message="Bloom in Every Moment" />}
+      <AnimatePresence mode="wait">
+        {loading && <FlowerLoader key="flower-loader" message="Bloom in Every Moment" />}
       </AnimatePresence>
 
       <Navbar 

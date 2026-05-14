@@ -10,7 +10,7 @@ export const colors = {
   lightGray: '#f8fafc'
 };
 
-export const WA_NUMBER = "6281234567890";
+export const WA_NUMBER = "6289692820887";
 export const getWaLink = (message) => `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
 
 export const socialLinks = [
@@ -214,10 +214,11 @@ export const products = [
 
 export const collaborations = [
   {
-    id: 101, name: 'Baking Class: Scoopable Cookies 🍪', type: 'Cooking Baking Class',
-    partner: ['By Rentz', 'Your Cap', 'Benings Clinic', 'Fugo Hotel Banjarmasin'], date: '24 Mei 2026', location: 'FUGO Hotel Banjarmasin',
+    id: 101, name: 'Baking Class: Scoopable Cookies 🍪', type: 'Cooking Baking Class', isComingSoon: true,
+    partner: ['Your Cap', 'By Rentz', 'Benings Clinic', 'Fugo Hotel Banjarmasin'], date: '24 Mei 2026', location: 'FUGO Hotel Banjarmasin',
     fullDesc: 'Saatnya upgrade skill baking kamu lewat Scoopable Cookies Baking Class bersama YOUR CAP di FUGO Hotel Banjarmasin 💖',
     image: 'cookies collab 2.png',
+    videoCover: 'cookies collab 2.png',
     video: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Example video
     gallery: [
       'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=600',
@@ -225,11 +226,12 @@ export const collaborations = [
     ]
   },
   {
-    id: 102, name: 'Letters to the Heart: Journaling Class (Valentine Day)🩷', type: 'Journaling Class',
-    partner: ['Menty', 'Your Cap', 'Emina Cosmetics', 'FamLaundryBjm', 'Fave Hotel Banjarmasin'], date: '15 Februari 2026', location: 'Fave Hotel Banjarmasin',
+    id: 102, name: 'Letters to the Heart: Journaling Class (Valentine Day)💖', type: 'Journaling Class',
+    partner: ['Your Cap', 'Menty', 'Emina Cosmetics', 'FamLaundryBjm', 'Fave Hotel Banjarmasin'], date: '15 Februari 2026', location: 'Fave Hotel Banjarmasin',
     fullDesc: 'Sebuah ruang aman untuk berhenti sejenak, jujur pada perasaan, dan menuangkannya lewat journaling yang dibimbing langsung oleh psikolog. Cocok untuk kamu yang ingin lebih terhubung dengan diri sendiri—tanpa drama, tanpa harus “sempurna”.',
     image: 'journaling class 1.png',
-    video: 'https://player.cloudinary.com/embed/?cloud_name=dmq0lwohk&public_id=journaling_timee_special_wbj67m',
+    videoCover: 'kegiatan/journaling class work.jpg',
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=journaling_timee_special_Valentine_journaling_eminabanjarmasin_valentines_cyfurp',
     gallery: [
       'kegiatan/journaling class work.jpg',
       'kegiatan/journaling class work 2.jpg'
@@ -237,47 +239,50 @@ export const collaborations = [
   },
   {
     id: 103, name: 'Mochi Cheesecake Class 🍰🍡🧀', type: 'Cooking Baking Class',
-    partner: ['Your Cap', 'Glosa Skin.', 'Seol-a Dessert House', 'Ketemu Studio', 'FUGO Hotel Banjarmasin', ''], date: '1 Februari 2026', location: 'Fave Hotel Banjarmasin',
+    partner: ['Your Cap', 'Glosa Skin', 'Seol-a Dessert House', 'Ketemu Studio', 'FUGO Hotel Banjarmasin'], date: '1 Februari 2026', location: 'Fave Hotel Banjarmasin',
     fullDesc: 'Yuk isi akhir pekanmu dengan pengalaman seru membuat Mochi Cheesecake Class! Belajar bikin mochi cheesecake sendiri, pulang bawa cake, plus gifts lainnya ✨',
     image: 'mochi.png',
-    video: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    gallery: ['https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=Mochi_Cheesecake_Class_wrapped_Terima_kasih_untuk_semua_yang_sudah_hadir_dan_ikut_meramaikan_cycpdi',
+    gallery: ['']
   },
   {
     id: 104, name: 'Chunky Bag Class is back🙋🏻♀️', type: 'Decoration Class',
     partner: ['Your Cap', 'The Last Love', 'Ashaya', 'Make Over', 'Bamega Laundry'], date: '30 November 2025', location: 'Last Love Cosmetics, Banjarbaru',
     fullDesc: 'Waktunya bikin tas rajut super gemas dengan tanganmu sendiri 💕 Belajar langsung teknik membuat chunky bag dengan suasana santai dan menyenangkan',
     image: 'chuncky bag 1.png',
-    video: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    gallery: ['https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=Terima_kasih_kepada_semua_peserta_yang_telah_bergabung_di_Chunky_Bag_Class.Senang_bisa_melihat_a_qxre4w',
+    gallery: ['']
   },
   {
     id: 105, name: 'Crochet Fairy Bow Class is here! 🎀', type: 'Decoration Class',
     partner: ['Your Cap', 'Brownie Handcrafted', 'Wardah', 'FUGO Hotel Banjarmasin'], date: '5 Oktober 2025', location: 'FUGO Hotel Banjarmasin',
     fullDesc: 'Pernah kepikiran bikin aksesoris rajut yang cantik & bisa dipakai sendiri? ✨ Yuk gabung di kelas ini, kita belajar bareng bikin fairy bow yang super gemes! 🧚🏻‍♀️💖',
     image: 'bow.png',
-    video: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    gallery: ['https://images.unsplash.com/photo-1502736842968-bcaab72d0700?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=Vibes_Fairy___%EF%B8%8F_Mood_Crochet_Thank_u_guys_for_making_our_Crochet_Fairy_Bow_Class_sooo_magical_bvvz2a',
+    gallery: ['']
   },
   {
     id: 106, name: '🍰 DESSERT BOX CLASS is here! “Layer by layer, make it yours.” 💖', type: 'Cooking Baking Class',
     partner: ['Your Cap', 'Seol-a Dessert House', 'Wardah', 'Trend6forlife', 'Aeris Hotel Banjarbaru'], date: '14 September 2025', location: 'Calypso Meeting Room, Aeris Hotel BJB',
     fullDesc: 'Belajar bikin Tiramisu dan Vanilla Strawberry Dessert Box yang super yummy & estetik, bareng Your Cap dan Seol-a di Aeris Hotel Banjarbaru! ✨',
     image: 'box.png',
-    gallery: ['https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=We_are_delighted_to_share_the_success_of_our_Dessert_Box_Class_This_event_was_not_only_about_cr_rsdkpv',
+    gallery: ['']
   },
   {
     id: 107, name: 'Chunky Bag Class - Your Cap & Ketemu Studio', type: 'Decoration Class',
     partner: ['Your Cap', 'Ketemu Studio', 'Seol-a Dessert House'], date: '3 Agustus 2025', location: 'Ketemu Studio Banjarmasin',
     fullDesc: 'Yuk ikutan Chunky Bag Class bareng Your Cap dan Ketemu Studio! Buat tas gemes dari benang jumbo dengan teknik yang super fun dan mudah dipelajari 🧶💗',
     image: 'chuncky bag 2.png',
-    gallery: ['https://images.unsplash.com/photo-1519340333755-56f9c1d04579?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=Thank_you_to_everyone_who_joined_our_Chunky_Bag_Class_by_Your_Cap._We_had_so_much_fun_crafting_e3rblu',
+    gallery: ['']
   },
   {
     id: 108, name: 'Cake Picnic BY Your Cap', type: 'Event',
     partner: ['Your Cap', 'Haka Koffie', 'Picnic Buddy', 'Kalsel Next', 'Joy Galleria'], date: '29 Juni 2025', location: 'Haka Koffie Banjarmasin',
     fullDesc: 'Instalasi bunga interaktif dengan pencahayaan spektakuler untuk menyambut tahun baru.',
     image: 'picnic.png',
-    gallery: ['https://images.unsplash.com/photo-1507041957456-9c397ce39c97?auto=format&fit=crop&q=80&w=600']
+    video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=That_s_a_wrap_for_Cake_Picnic_by_Your_Cap_Terima_kasih_untuk_semua_yang_sudah_datang_bawa_a5r7kl',
+    gallery: ['']
   }
 ];

@@ -7,12 +7,22 @@ import FlowerLoader from './Loader';
 const CollabDetail = ({ collab, onBack }) => {
   const [localLoading, setLocalLoading] = useState(true);
 
+  const [isPlaying, setIsPlaying] = useState(false);
+
   useEffect(() => {
     setLocalLoading(true);
+    setIsPlaying(false);
     // Increased duration to 2.5s for visibility
     const timer = setTimeout(() => setLocalLoading(false), 2500);
     return () => clearTimeout(timer);
   }, [collab]);
+
+  // Handle video URL to include autoplay if needed
+  const getVideoUrl = (url) => {
+    if (!url) return '';
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}autoplay=1`;
+  };
 
   return (
     <motion.div
@@ -84,26 +94,51 @@ const CollabDetail = ({ collab, onBack }) => {
                     <h3 className="text-2xl font-serif font-bold mb-6 flex items-center gap-2">
                       <Play size={20} style={{ color: colors.peach }} /> Highlight Video
                     </h3>
-                    <div className="aspect-video w-full rounded-[2rem] overflow-hidden shadow-lg border border-slate-100">
-                       <iframe 
-                        width="100%" 
-                        height="100%" 
-                        src={collab.video} 
-                        title="YouTube video player" 
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen
-                       ></iframe>
+                    <div className="aspect-video w-full rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 bg-slate-900 relative group">
+                      {!isPlaying ? (
+                        <div className="absolute inset-0 cursor-pointer" onClick={() => setIsPlaying(true)}>
+                          <img 
+                            src={collab.videoCover || collab.image} 
+                            className="w-full h-full object-cover opacity-60 group-hover:opacity-50 transition-opacity duration-500" 
+                            alt="Video Cover" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <motion.div 
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-2xl"
+                            >
+                              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-[#f8b1d2]">
+                                <Play size={32} fill="currentColor" />
+                              </div>
+                            </motion.div>
+                          </div>
+                        </div>
+                      ) : (
+                        <iframe 
+                          width="100%" 
+                          height="100%" 
+                          src={getVideoUrl(collab.video)} 
+                          title="Video player" 
+                          frameBorder="0" 
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                          allowFullScreen
+                        ></iframe>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <h3 className="text-2xl font-serif font-bold mb-6">Momen Workshop</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {collab.gallery.map((img, i) => (
-                    <img key={i} src={img} className="w-full h-48 object-cover rounded-3xl" alt="Gallery" />
-                  ))}
-                </div>
+                {collab.gallery && collab.gallery.some(img => img && img.trim() !== '') && (
+                  <>
+                    <h3 className="text-2xl font-serif font-bold mb-6">Momen Workshop</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {collab.gallery.filter(img => img && img.trim() !== '').map((img, i) => (
+                        <img key={i} src={img} className="w-full h-48 object-cover rounded-3xl" alt="Gallery" />
+                      ))}
+                    </div>
+                  </>
+                )}
                 
                 <div className="mt-12 p-8 rounded-[2rem] bg-slate-50 flex flex-col md:flex-row items-center justify-between gap-6">
                   <div>

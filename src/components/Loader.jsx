@@ -4,9 +4,9 @@ import { motion } from 'framer-motion';
 const FlowerLoader = ({ message = "Bloom in Every Moment" }) => {
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.6, ease: "easeInOut" } }}
       className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center overflow-hidden"
     >
       {/* Soft Background Glow */}

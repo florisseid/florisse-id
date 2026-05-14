@@ -43,3 +43,23 @@ html {
 .mobile-menu-enter {
   animation: slideDown 0.3s ease-out;
 }
+
+/* Visually hidden (screen reader only) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Visible focus ring for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #f8b1d2;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

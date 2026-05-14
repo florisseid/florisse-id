@@ -68,8 +68,8 @@ const Footer = ({ scrollToSection }) => {
 
   return (
     <footer className="bg-slate-900 text-white pt-24 pb-12 overflow-hidden relative">
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none select-none opacity-[0.03] flex items-center justify-center">
-        <h2 className="text-[25vw] font-serif font-black leading-none uppercase tracking-tighter">FLORISSE</h2>
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none select-none opacity-[0.03] flex items-center justify-center" aria-hidden="true">
+        <span className="text-[25vw] font-serif font-black leading-none uppercase tracking-tighter">FLORISSE</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -78,7 +78,7 @@ const Footer = ({ scrollToSection }) => {
           {/* Brand Identity */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <img src="FLORISSELOGO.png" alt="logo" className="w-12 h-12 rounded-md" />
+              <img src="/FLORISSELOGO.png" alt="Logo Florisse" className="w-12 h-12 rounded-md" width="48" height="48" loading="lazy" />
               <span className="font-serif text-2xl font-bold tracking-tight">Florisse.id</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed pr-4">
@@ -166,7 +166,9 @@ const Footer = ({ scrollToSection }) => {
               </motion.div>
             ) : (
               <form onSubmit={handleNewsletterSubmit} className="relative">
+                <label htmlFor="newsletter-email" className="sr-only">Alamat email Anda</label>
                 <input
+                  id="newsletter-email"
                   type="email"
                   required
                   value={email}
@@ -174,16 +176,18 @@ const Footer = ({ scrollToSection }) => {
                   placeholder="Email Anda"
                   className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-4 text-sm outline-none focus:border-[#f8b1d2] transition disabled:opacity-50"
                   disabled={status === 'loading'}
+                  autoComplete="email"
                 />
                 <button
                   type="submit"
                   disabled={status === 'loading'}
+                  aria-label="Daftar newsletter Florisse"
                   className="absolute right-2 top-2 p-1.5 rounded-lg bg-[#f8b1d2] text-white hover:scale-105 transition-transform disabled:opacity-50"
                 >
                   {status === 'loading' ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true"></div>
                   ) : (
-                    <ArrowRight size={16} />
+                    <ArrowRight size={16} aria-hidden="true" />
                   )}
                 </button>
               </form>
