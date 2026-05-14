@@ -82,7 +82,7 @@ const Footer = ({ scrollToSection }) => {
               <span className="font-serif text-2xl font-bold tracking-tight">Florisse.id</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed pr-4">
-              Menciptakan momen magis melalui rangkaian bunga pilihan. Florist berbasis Jakarta Selatan yang berfokus pada kualitas dan estetika modern.
+              Menciptakan momen magis melalui rangkaian bunga pilihan. Florist berbasis di Banjarmasin yang berfokus pada kualitas dan estetika modern.
             </p>
             <div className="flex gap-3">
               {socialLinks.map((link, i) => {
