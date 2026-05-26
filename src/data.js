@@ -329,5 +329,19 @@ export const collaborations = [
     videoCover: 'picnic.png',
     video: 'https://player.cloudinary.com/embed/?cloud_name=dkp2vqsm4&public_id=That_s_a_wrap_for_Cake_Picnic_by_Your_Cap_Terima_kasih_untuk_semua_yang_sudah_datang_bawa_a5r7kl',
     gallery: [""]
+  },
+  {
+    id: 109,
+    name: 'MBG',
+    type: 'Pangan ',
+    isComingSoon: false,
+    partner: ["Your Cap"],
+    date: '30 Mei 2026',
+    location: 'Taman Kamboja',
+    fullDesc: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.',
+    image: 'cookies collab 2.png',
+    videoCover: 'cookies collab 2.png',
+    video: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    gallery: ["cookies collab 2.png"]
   }
 ];
