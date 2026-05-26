@@ -904,22 +904,43 @@ ${formattedCollabs}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Poster / Gambar Utama</label>
-                        <select
-                          value={cImage}
-                          onChange={(e) => {
-                            setCImage(e.target.value);
-                            setCVideoCover(e.target.value);
-                          }}
-                          className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] text-sm bg-white"
-                        >
-                          <option value="cookies collab 2.png">Cookies Class (cookies collab 2.png)</option>
-                          <option value="journaling class 1.png">Journaling Class (journaling class 1.png)</option>
-                          <option value="mochi.png">Mochi Class (mochi.png)</option>
-                          <option value="chuncky bag 1.png">Chunky Bag 1 (chuncky bag 1.png)</option>
-                          <option value="bow.png">Fairy Bow Class (bow.png)</option>
-                          <option value="box.png">Dessert Box Class (box.png)</option>
-                        </select>
+                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Poster / Gambar Utama (Upload / Link)</label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Link gambar atau nama preset (misal: cookies collab 2.png)"
+                            value={cImage}
+                            onChange={(e) => {
+                              setCImage(e.target.value);
+                              setCVideoCover(e.target.value);
+                            }}
+                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm"
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="upload-collab-image"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e.target.files[0], (url) => {
+                              setCImage(url);
+                              setCVideoCover(url);
+                            })}
+                          />
+                          <label
+                            htmlFor="upload-collab-image"
+                            className="py-3 px-4 bg-slate-100 hover:bg-[#f8b1d2] hover:text-white text-slate-600 rounded-2xl text-xs font-bold transition-all cursor-pointer border border-slate-100 flex items-center gap-1.5 shrink-0"
+                          >
+                            <ImageIcon size={14} /> Upload
+                          </label>
+                        </div>
+                        {cImage && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 shrink-0">
+                              <img src={cImage.startsWith('data:') || cImage.startsWith('http') ? cImage : `./${cImage}`} className="w-full h-full object-cover" alt="Preview" />
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">Preview Poster Utama</span>
+                          </div>
+                        )}
                       </div>
 
                       <div>
@@ -989,31 +1010,64 @@ ${formattedCollabs}
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">Dokumentasi Galeri (URL/Filename)</label>
-                        <div className="flex gap-1 mb-2">
+                      <div className="sm:col-span-2 border-t border-slate-50 pt-4">
+                        <label className="block text-xs font-bold uppercase text-slate-500 tracking-wider mb-2">Dokumentasi Galeri (Upload / Link)</label>
+                        <div className="flex gap-2 items-center mb-4">
                           <input
                             type="text"
-                            placeholder="kegiatan/foto1.jpg"
+                            placeholder="Tulis Link/URL Gambar Galeri Baru"
                             value={newGalleryUrl}
                             onChange={(e) => setNewGalleryUrl(e.target.value)}
-                            className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 outline-none"
+                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm"
                           />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="upload-gallery-image"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e.target.files[0], (url) => {
+                              if (url) {
+                                setCGallery([...cGallery, url]);
+                              }
+                            })}
+                          />
+                          <label
+                            htmlFor="upload-gallery-image"
+                            className="py-3 px-4 bg-slate-100 hover:bg-[#f8b1d2] hover:text-white text-slate-600 rounded-2xl text-xs font-bold transition-all cursor-pointer border border-slate-100 flex items-center gap-1.5 shrink-0"
+                          >
+                            <ImageIcon size={14} /> Upload File
+                          </label>
                           <button
                             type="button"
-                            onClick={() => addListItem(cGallery, setCGallery, newGalleryUrl, setNewGalleryUrl)}
-                            className="p-2 bg-slate-100 hover:bg-[#f8b1d2] hover:text-white rounded-xl transition-colors cursor-pointer"
+                            onClick={() => {
+                              if (newGalleryUrl.trim()) {
+                                setCGallery([...cGallery, newGalleryUrl.trim()]);
+                                setNewGalleryUrl('');
+                              }
+                            }}
+                            className="py-3 px-4 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                           >
-                            <Plus size={14} />
+                            Tambah
                           </button>
                         </div>
-                        <div className="space-y-1 max-h-[80px] overflow-y-auto pr-1">
+
+                        {/* Visual gallery grid */}
+                        <div className="flex flex-wrap gap-3">
                           {cGallery.map((img, i) => (
-                            <div key={i} className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded-lg text-[10px] text-slate-600">
-                              <span className="truncate">{img}</span>
-                              <button type="button" onClick={() => removeListItem(cGallery, setCGallery, i)} className="text-red-500 hover:text-red-700"><X size={10} /></button>
+                            <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group shadow-sm">
+                              <img src={img.startsWith('data:') || img.startsWith('http') ? img : `./${img}`} className="w-full h-full object-cover" alt="" />
+                              <button
+                                type="button"
+                                onClick={() => setCGallery(cGallery.filter((_, idx) => idx !== i))}
+                                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                              >
+                                <Trash2 size={16} />
+                              </button>
                             </div>
                           ))}
+                          {cGallery.length === 0 && (
+                            <span className="text-xs text-slate-400 font-medium">Belum ada dokumentasi galeri. Upload atau tambahkan link gambar di atas.</span>
+                          )}
                         </div>
                       </div>
                     </div>
