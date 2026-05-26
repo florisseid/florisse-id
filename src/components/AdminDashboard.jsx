@@ -215,6 +215,7 @@ const AdminDashboard = ({
     setEditingCollab(null);
     setShowAddCollab(false);
     setCName('');
+    setCType('Cooking Baking Class');
     setCDate('');
     setCLocation('');
     setCDesc('');
@@ -968,16 +969,14 @@ ${formattedCollabs}
 
                       <div>
                         <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Jenis Kegiatan</label>
-                        <select
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Cooking Baking Class, Decoration Class, dll."
                           value={cType}
                           onChange={(e) => setCType(e.target.value)}
-                          className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm bg-white"
-                        >
-                          <option value="Cooking Baking Class">Cooking Baking Class</option>
-                          <option value="Journaling Class">Journaling Class</option>
-                          <option value="Decoration Class">Decoration Class</option>
-                          <option value="Event">Event / Lainnya</option>
-                        </select>
+                          className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm"
+                        />
                       </div>
 
                       <div>
