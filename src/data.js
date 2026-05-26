@@ -209,22 +209,6 @@ export const products = [
     bonus: ['FREE Packaging', 'Kartu ucapan', 'Pita lucu'],
     material: ['Artificial Flower Premium', 'Tahan lama & Tidak layu'],
     kukerOptions: ['Nastar / Nastar Keju', 'Putri Salju', 'Semprit', 'Palm Cheese', 'Sagu Keju']
-  },
-  {
-    id: 13,
-    name: 'Hampers Natal',
-    category: ['Hampers', 'Collab Product'],
-    price: 'Rp 75.000',
-    image: 'https://drive.google.com/file/d/1nqqudIrrzzPT8e886rVDD6bQVeUgHcYX/view?usp=drive_link',
-    variants: [
-
-    ],
-    bestSeller: false,
-    desc: 'Hampers bernuansa natal yang hadir dalam edisi spesial natal. Dikemas elegan dengan sentuhan dekorasi estetik dan detail yang rapi, menjadikannya pilihan sempurna untuk berbagi kebahagiaan di hari natal.  Cocok sebagai bingkisan silaturahmi untuk keluarga, sahabat, maupun rekan kerja menghadirkan kesan hangat, anggun, dan penuh makna.',
-    specs: ['🧺 1 Signature Jar (500 ml): Default isi Chocochips Strawberry', '👜 Exclusive Golden Chain Bag', '🌻 Bunga matahari, lili, poppy, dan anggrek', '💄 Emina Glosszilla / Jelly Stain', '🏷️ Free Hangtag'],
-    bonus: ['FREE Packaging', 'Kartu ucapan', 'Pita lucu'],
-    material: ['Artificial Flower Premium', 'Tahan lama & Tidak layu'],
-    kukerOptions: ['Nastar / Nastar Keju', 'Putri Salju', 'Semprit', 'Palm Cheese', 'Sagu Keju']
   }
 ];
 
