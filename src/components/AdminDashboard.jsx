@@ -27,14 +27,18 @@ const AdminDashboard = ({
   const [pPrice, setPPrice] = useState('Rp 50.000');
   const [pCategory, setPCategory] = useState('Buket');
   const [pImage, setPImage] = useState('1.jpeg');
+  const [pVariants, setPVariants] = useState(['1.jpeg']);
+  const [newVariant, setNewVariant] = useState('');
   const [pDesc, setPDesc] = useState('');
   const [pBestSeller, setPBestSeller] = useState(false);
   const [pSpecs, setPSpecs] = useState(['Rangkaian bunga premium', 'Pita lucu']);
   const [pBonus, setPBonus] = useState(['FREE Packaging', 'Kartu ucapan']);
   const [pMaterial, setPMaterial] = useState(['Artificial Flower Premium']);
+  const [pKukerOptions, setPKukerOptions] = useState(['Nastar', 'Kastengel']);
   const [newSpec, setNewSpec] = useState('');
   const [newBonus, setNewBonus] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
+  const [newKukerOption, setNewKukerOption] = useState('');
 
   // States for new collaboration form
   const [cName, setCName] = useState('');
@@ -62,54 +66,40 @@ const AdminDashboard = ({
     setList(list.filter((_, i) => i !== index));
   };
 
+  const handleImageUpload = (file, callback) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      callback(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddProductSubmit = (e) => {
     e.preventDefault();
+    const finalProduct = {
+      name: pName || 'Buket Bunga Baru',
+      category: pCategory,
+      price: pPrice,
+      image: pImage || '1.jpeg',
+      variants: pVariants.length > 0 ? pVariants : [pImage || '1.jpeg'],
+      bestSeller: pBestSeller,
+      desc: pDesc || 'Rangkaian bunga yang elegan dari Florisse.',
+      specs: pSpecs.filter(Boolean),
+      bonus: pBonus.filter(Boolean),
+      material: pMaterial.filter(Boolean),
+      ...(pCategory === 'Hampers' && pKukerOptions.length > 0 ? { kukerOptions: pKukerOptions.filter(Boolean) } : {})
+    };
+
     if (editingProduct) {
-      // Edit mode
-      const updatedProduct = {
-        ...editingProduct,
-        name: pName || 'Buket Bunga Baru',
-        category: pCategory,
-        price: pPrice,
-        image: pImage || '1.jpeg',
-        variants: [pImage || '1.jpeg'],
-        bestSeller: pBestSeller,
-        desc: pDesc || 'Rangkaian bunga yang elegan dari Florisse.',
-        specs: pSpecs.filter(Boolean),
-        bonus: pBonus.filter(Boolean),
-        material: pMaterial.filter(Boolean)
-      };
-      setProductsList(productsList.map(p => p.id === editingProduct.id ? updatedProduct : p));
+      setProductsList(productsList.map(p => p.id === editingProduct.id ? { ...editingProduct, ...finalProduct } : p));
       setEditingProduct(null);
     } else {
-      // Add mode
       const newId = productsList.length > 0 ? Math.max(...productsList.map(p => p.id)) + 1 : 1;
-      const newProduct = {
-        id: newId,
-        name: pName || 'Buket Bunga Baru',
-        category: pCategory,
-        price: pPrice,
-        image: pImage || '1.jpeg',
-        variants: [pImage || '1.jpeg'],
-        bestSeller: pBestSeller,
-        desc: pDesc || 'Rangkaian bunga yang elegan dari Florisse.',
-        specs: pSpecs.filter(Boolean),
-        bonus: pBonus.filter(Boolean),
-        material: pMaterial.filter(Boolean)
-      };
-      setProductsList([...productsList, newProduct]);
+      setProductsList([...productsList, { id: newId, ...finalProduct }]);
     }
     setShowAddProduct(false);
-
-    // Reset fields
-    setPName('');
-    setPPrice('Rp 50.000');
-    setPCategory('Buket');
-    setPDesc('');
-    setPBestSeller(false);
-    setPSpecs(['Rangkaian bunga premium', 'Pita lucu']);
-    setPBonus(['FREE Packaging', 'Kartu ucapan']);
-    setPMaterial(['Artificial Flower Premium']);
+    handleCancelProduct();
   };
 
   const handleEditProductClick = (product) => {
@@ -118,11 +108,13 @@ const AdminDashboard = ({
     setPPrice(product.price);
     setPCategory(Array.isArray(product.category) ? product.category[0] : product.category);
     setPImage(product.image);
+    setPVariants(product.variants || [product.image]);
     setPDesc(product.desc);
     setPBestSeller(!!product.bestSeller);
     setPSpecs(product.specs || []);
     setPBonus(product.bonus || []);
     setPMaterial(product.material || []);
+    setPKukerOptions(product.kukerOptions || []);
     setShowAddProduct(true);
   };
 
@@ -132,11 +124,16 @@ const AdminDashboard = ({
     setPName('');
     setPPrice('Rp 50.000');
     setPCategory('Buket');
+    setPImage('1.jpeg');
+    setPVariants(['1.jpeg']);
     setPDesc('');
     setPBestSeller(false);
     setPSpecs(['Rangkaian bunga premium', 'Pita lucu']);
     setPBonus(['FREE Packaging', 'Kartu ucapan']);
     setPMaterial(['Artificial Flower Premium']);
+    setPKukerOptions([]);
+    setNewVariant('');
+    setNewKukerOption('');
   };
 
   const handleAddCollabSubmit = (e) => {
@@ -234,19 +231,23 @@ const AdminDashboard = ({
   const generateFullDataJs = () => {
     // Generate formatting
     const formattedProducts = productsList.map(p => {
-      return `  {
-    id: ${p.id},
-    name: '${p.name.replace(/'/g, "\\'")}',
-    category: ${Array.isArray(p.category) ? JSON.stringify(p.category) : `'${p.category}'`},
-    price: '${p.price}',
-    image: '${p.image}',
-    variants: ${JSON.stringify(p.variants || [])},
-    bestSeller: ${p.bestSeller},
-    desc: '${p.desc.replace(/'/g, "\\'").replace(/\n/g, " ")}',
-    specs: ${JSON.stringify(p.specs)},
-    bonus: ${JSON.stringify(p.bonus)},
-    material: ${JSON.stringify(p.material)}
-  }`;
+      const parts = [
+        `    id: ${p.id}`,
+        `    name: '${p.name.replace(/'/g, "\\'")}'`,
+        `    category: ${Array.isArray(p.category) ? JSON.stringify(p.category) : `'${p.category}'`}`,
+        `    price: '${p.price}'`,
+        `    image: '${p.image}'`,
+        `    variants: ${JSON.stringify(p.variants || [])}`,
+        `    bestSeller: ${p.bestSeller}`,
+        `    desc: '${p.desc.replace(/'/g, "\\'").replace(/\n/g, " ")}'`,
+        `    specs: ${JSON.stringify(p.specs)}`,
+        `    bonus: ${JSON.stringify(p.bonus)}`,
+        `    material: ${JSON.stringify(p.material)}`
+      ];
+      if (p.kukerOptions && p.kukerOptions.length > 0) {
+        parts.push(`    kukerOptions: ${JSON.stringify(p.kukerOptions)}`);
+      }
+      return `  {\n${parts.join(',\n')}\n  }`;
     }).join(',\n');
 
     const formattedCollabs = collabsList.map(c => {
@@ -472,19 +473,99 @@ ${formattedCollabs}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Gambar Utama (File / Preset)</label>
-                        <select
-                          value={pImage}
-                          onChange={(e) => setPImage(e.target.value)}
-                          className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm bg-white"
-                        >
-                          <option value="1.jpeg">Bucket Bunga 1 (1.jpeg)</option>
-                          <option value="2.jpeg">Flower Bag Pink (2.jpeg)</option>
-                          <option value="13.jpeg">Single Bouquet Pink (13.jpeg)</option>
-                          <option value="Flower Bag Purple.jpg">Flower Bag Purple.jpg</option>
-                          <option value="board.jpg">The Flora Board (board.jpg)</option>
-                          <option value="Hampers Lebaran.jpg">Hampers Lebaran.jpg</option>
-                        </select>
+                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Gambar Utama (Upload / Link)</label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="text"
+                            placeholder="Link gambar atau nama preset (misal: 1.jpeg)"
+                            value={pImage}
+                            onChange={(e) => setPImage(e.target.value)}
+                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm"
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="upload-main-image"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e.target.files[0], setPImage)}
+                          />
+                          <label
+                            htmlFor="upload-main-image"
+                            className="py-3 px-4 bg-slate-100 hover:bg-[#f8b1d2] hover:text-white text-slate-600 rounded-2xl text-xs font-bold transition-all cursor-pointer border border-slate-100 flex items-center gap-1.5 shrink-0"
+                          >
+                            <ImageIcon size={14} /> Upload
+                          </label>
+                        </div>
+                        {pImage && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 shrink-0">
+                              <img src={pImage.startsWith('data:') || pImage.startsWith('http') ? pImage : `./${pImage}`} className="w-full h-full object-cover" alt="Preview" />
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">Preview Gambar Utama</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Variants Management */}
+                      <div className="sm:col-span-2 border-t border-slate-50 pt-4">
+                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Varian Gambar Buket/Hampers</label>
+                        <div className="flex gap-2 items-center mb-4">
+                          <input
+                            type="text"
+                            placeholder="Tulis Link/URL Gambar Varian Baru"
+                            value={newVariant}
+                            onChange={(e) => setNewVariant(e.target.value)}
+                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm"
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="upload-variant-image"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e.target.files[0], (url) => {
+                              if (url) {
+                                setPVariants([...pVariants, url]);
+                              }
+                            })}
+                          />
+                          <label
+                            htmlFor="upload-variant-image"
+                            className="py-3 px-4 bg-slate-100 hover:bg-[#f8b1d2] hover:text-white text-slate-600 rounded-2xl text-xs font-bold transition-all cursor-pointer border border-slate-100 flex items-center gap-1.5 shrink-0"
+                          >
+                            <ImageIcon size={14} /> Upload File
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (newVariant.trim()) {
+                                setPVariants([...pVariants, newVariant.trim()]);
+                                setNewVariant('');
+                              }
+                            }}
+                            className="py-3 px-4 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                          >
+                            Tambah
+                          </button>
+                        </div>
+
+                        {/* List of current variants */}
+                        <div className="flex flex-wrap gap-3">
+                          {pVariants.map((v, idx) => (
+                            <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group shadow-sm">
+                              <img src={v.startsWith('data:') || v.startsWith('http') ? v : `./${v}`} className="w-full h-full object-cover" alt="" />
+                              <button
+                                type="button"
+                                onClick={() => setPVariants(pVariants.filter((_, i) => i !== idx))}
+                                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                          {pVariants.length === 0 && (
+                            <span className="text-xs text-slate-400 font-medium">Belum ada varian gambar. Gambar utama akan digunakan sebagai varian tunggal.</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -599,6 +680,59 @@ ${formattedCollabs}
                         </div>
                       </div>
                     </div>
+
+                    {/* Hampers Kue Kering Options */}
+                    {pCategory === 'Hampers' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="bg-[#b7d7f7]/5 border border-[#b7d7f7]/20 p-6 rounded-3xl mt-4 space-y-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                              🍪 Request Kue Kering (Kuker) untuk Hampers
+                            </h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Daftar pilihan kue kering yang bisa dipilih oleh pembeli dalam Hampers ini.</p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Contoh: Nastar Wisman, Kastengel Premium, Putri Salju"
+                            value={newKukerOption}
+                            onChange={(e) => setNewKukerOption(e.target.value)}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 outline-none text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addListItem(pKukerOptions, setPKukerOptions, newKukerOption, setNewKukerOption)}
+                            className="py-2.5 px-4 bg-[#b7d7f7] hover:bg-[#b7d7f7]/80 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+                          >
+                            Tambah Pilihan
+                          </button>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {pKukerOptions.map((opt, i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 bg-white border border-[#b7d7f7]/20 px-3 py-1 rounded-full text-xs text-slate-600 font-medium">
+                              ✨ {opt}
+                              <button
+                                type="button"
+                                onClick={() => removeListItem(pKukerOptions, setPKukerOptions, i)}
+                                className="text-red-500 hover:text-red-700 text-xs shrink-0 cursor-pointer font-bold"
+                              >
+                                &times;
+                              </button>
+                            </span>
+                          ))}
+                          {pKukerOptions.length === 0 && (
+                            <span className="text-xs text-slate-400 italic">Belum ada pilihan kue kering. Tambahkan pilihan di atas agar muncul di detail produk.</span>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
 
                     <div className="flex gap-4 pt-4 border-t border-slate-50">
                       <button
