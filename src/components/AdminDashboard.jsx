@@ -6,12 +6,15 @@ import {
   Edit
 } from 'lucide-react';
 import { colors } from '../data';
+import { supabase } from '../supabaseClient';
 
 const AdminDashboard = ({
   productsList,
   setProductsList,
   collabsList,
   setCollabsList,
+  categoriesList,
+  setCategoriesList,
   onLogout,
   onBackToHome
 }) => {
@@ -40,11 +43,8 @@ const AdminDashboard = ({
   const [newMaterial, setNewMaterial] = useState('');
   const [newKukerOption, setNewKukerOption] = useState('');
 
-  // Dynamic product categories
-  const [categoryOptions, setCategoryOptions] = useState(() => {
-    const saved = localStorage.getItem('florisse_categories');
-    return saved ? JSON.parse(saved) : ['Buket', 'Flower Box', 'Hampers', 'Collab Product'];
-  });
+  // Dynamic product categories (from Supabase via App.jsx props)
+  const categoryOptions = categoriesList || ['Buket', 'Flower Box', 'Hampers', 'Collab Product'];
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -83,7 +83,7 @@ const AdminDashboard = ({
     reader.readAsDataURL(file);
   };
 
-  const handleAddProductSubmit = (e) => {
+  const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     const finalProduct = {
       name: pName || 'Buket Bunga Baru',
@@ -100,11 +100,30 @@ const AdminDashboard = ({
     };
 
     if (editingProduct) {
+      // Optimistic local update
       setProductsList(productsList.map(p => p.id === editingProduct.id ? { ...editingProduct, ...finalProduct } : p));
+      // Sync to Supabase
+      if (supabase) {
+        await supabase.from('products').update({
+          name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
+          image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
+          desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
+          material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
+        }).eq('id', editingProduct.id);
+      }
       setEditingProduct(null);
     } else {
       const newId = productsList.length > 0 ? Math.max(...productsList.map(p => p.id)) + 1 : 1;
       setProductsList([...productsList, { id: newId, ...finalProduct }]);
+      // Sync to Supabase
+      if (supabase) {
+        await supabase.from('products').insert({
+          name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
+          image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
+          desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
+          material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
+        });
+      }
     }
     setShowAddProduct(false);
     handleCancelProduct();
@@ -144,44 +163,41 @@ const AdminDashboard = ({
     setNewKukerOption('');
   };
 
-  const handleAddCollabSubmit = (e) => {
+  const handleAddCollabSubmit = async (e) => {
     e.preventDefault();
+    const collabPayload = {
+      name: cName || 'Kelas Baru',
+      type: cType,
+      is_coming_soon: cComingSoon,
+      partner: cPartners.filter(Boolean),
+      date: cDate || 'Segera Hadir',
+      location: cLocation || 'TBA',
+      full_desc: cDesc || 'Ikuti keseruan kelas dekorasi/baking kolaborasi.',
+      image: cImage || 'cookies collab 2.png',
+      video_cover: cVideoCover || 'cookies collab 2.png',
+      video: cVideo || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      gallery: cGallery.length > 0 ? cGallery.filter(Boolean) : [cImage || 'cookies collab 2.png']
+    };
+    // Local-friendly format
+    const localCollab = {
+      ...collabPayload,
+      isComingSoon: collabPayload.is_coming_soon,
+      fullDesc: collabPayload.full_desc,
+      videoCover: collabPayload.video_cover
+    };
+
     if (editingCollab) {
-      // Edit mode
-      const updatedCollab = {
-        ...editingCollab,
-        name: cName || 'Kelas Baru',
-        type: cType,
-        isComingSoon: cComingSoon,
-        partner: cPartners.filter(Boolean),
-        date: cDate || 'Segera Hadir',
-        location: cLocation || 'TBA',
-        fullDesc: cDesc || 'Ikuti keseruan kelas dekorasi/baking kolaborasi.',
-        image: cImage || 'cookies collab 2.png',
-        videoCover: cVideoCover || 'cookies collab 2.png',
-        video: cVideo || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        gallery: cGallery.length > 0 ? cGallery.filter(Boolean) : [cImage || 'cookies collab 2.png']
-      };
-      setCollabsList(collabsList.map(c => c.id === editingCollab.id ? updatedCollab : c));
+      setCollabsList(collabsList.map(c => c.id === editingCollab.id ? { ...editingCollab, ...localCollab } : c));
+      if (supabase) {
+        await supabase.from('collaborations').update(collabPayload).eq('id', editingCollab.id);
+      }
       setEditingCollab(null);
     } else {
-      // Add mode
       const newId = collabsList.length > 0 ? Math.max(...collabsList.map(c => c.id)) + 1 : 101;
-      const newCollab = {
-        id: newId,
-        name: cName || 'Kelas Baru',
-        type: cType,
-        isComingSoon: cComingSoon,
-        partner: cPartners.filter(Boolean),
-        date: cDate || 'Segera Hadir',
-        location: cLocation || 'TBA',
-        fullDesc: cDesc || 'Ikuti keseruan kelas dekorasi/baking kolaborasi.',
-        image: cImage || 'cookies collab 2.png',
-        videoCover: cVideoCover || 'cookies collab 2.png',
-        video: cVideo || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        gallery: cGallery.length > 0 ? cGallery.filter(Boolean) : [cImage || 'cookies collab 2.png']
-      };
-      setCollabsList([...collabsList, newCollab]);
+      setCollabsList([...collabsList, { id: newId, ...localCollab }]);
+      if (supabase) {
+        await supabase.from('collaborations').insert(collabPayload);
+      }
     }
     setShowAddCollab(false);
 
@@ -224,15 +240,21 @@ const AdminDashboard = ({
     setCGallery([]);
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini dari katalog?')) {
       setProductsList(productsList.filter(p => p.id !== id));
+      if (supabase) {
+        await supabase.from('products').delete().eq('id', id);
+      }
     }
   };
 
-  const handleDeleteCollab = (id) => {
+  const handleDeleteCollab = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus kolaborasi ini?')) {
       setCollabsList(collabsList.filter(c => c.id !== id));
+      if (supabase) {
+        await supabase.from('collaborations').delete().eq('id', id);
+      }
     }
   };
 
@@ -501,7 +523,7 @@ ${formattedCollabs}
                               placeholder="Nama kategori baru..."
                               value={newCategoryName}
                               onChange={(e) => setNewCategoryName(e.target.value)}
-                              onKeyDown={(e) => {
+                              onKeyDown={async (e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault();
                                   const trimmed = newCategoryName.trim();
@@ -511,8 +533,10 @@ ${formattedCollabs}
                                     return;
                                   }
                                   const updated = [...categoryOptions, trimmed];
-                                  setCategoryOptions(updated);
-                                  localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                  setCategoriesList(updated);
+                                  if (supabase) {
+                                    await supabase.from('categories').insert({ name: trimmed });
+                                  }
                                   setPCategory(trimmed);
                                   setNewCategoryName('');
                                   setShowAddCategory(false);
@@ -523,7 +547,7 @@ ${formattedCollabs}
                             />
                             <button
                               type="button"
-                              onClick={() => {
+                              onClick={async () => {
                                 const trimmed = newCategoryName.trim();
                                 if (!trimmed) return;
                                 if (categoryOptions.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
@@ -531,8 +555,10 @@ ${formattedCollabs}
                                   return;
                                 }
                                 const updated = [...categoryOptions, trimmed];
-                                setCategoryOptions(updated);
-                                localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                setCategoriesList(updated);
+                                if (supabase) {
+                                  await supabase.from('categories').insert({ name: trimmed });
+                                }
                                 setPCategory(trimmed);
                                 setNewCategoryName('');
                                 setShowAddCategory(false);
@@ -557,11 +583,13 @@ ${formattedCollabs}
                                 {cat}
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     if (pCategory === cat) setPCategory(categoryOptions[0]);
                                     const updated = categoryOptions.filter(c2 => c2 !== cat);
-                                    setCategoryOptions(updated);
-                                    localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                    setCategoriesList(updated);
+                                    if (supabase) {
+                                      await supabase.from('categories').delete().eq('name', cat);
+                                    }
                                   }}
                                   className="text-red-400 hover:text-red-600 ml-0.5"
                                   title={`Hapus kategori ${cat}`}

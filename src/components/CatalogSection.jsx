@@ -3,15 +3,14 @@ import { motion } from 'framer-motion';
 import { colors } from '../data';
 import { Layers } from 'lucide-react';
 
-const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct, productsList }) => {
-  // Read dynamic categories from localStorage (synced with admin dashboard)
+const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct, productsList, categoriesList }) => {
+  // Read dynamic categories from prop (synced with Supabase database)
   const categoryFilters = useMemo(() => {
-    try {
-      const saved = localStorage.getItem('florisse_categories');
-      if (saved) return ['Semua', ...JSON.parse(saved)];
-    } catch (e) { /* fallback */ }
+    if (categoriesList && categoriesList.length > 0) {
+      return ['Semua', ...categoriesList];
+    }
     return ['Semua', 'Buket', 'Flower Box', 'Hampers', 'Collab Product'];
-  }, [productsList]);
+  }, [categoriesList]);
 
   return (
     <section id="products" aria-label="Katalog produk Florisse" className="py-32 bg-white">
