@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Calendar, ArrowRight, ExternalLink } from 'lucide-react';
-import { colors, collaborations } from '../data';
+import { colors } from '../data';
 
-const CollaborationSection = ({ setSelectedCollab }) => (
+const CollaborationSection = ({ setSelectedCollab, collabsList }) => (
   <section id="collaboration" aria-label="Kolaborasi dan workshop Florisse" className="py-32 bg-slate-50">
     <div className="max-w-7xl mx-auto px-6">
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
@@ -13,7 +13,7 @@ const CollaborationSection = ({ setSelectedCollab }) => (
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {collaborations.map((col) => (
+        {collabsList.map((col) => (
           <motion.div
             key={col.id}
             whileHover={{ y: -10 }}

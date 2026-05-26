@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { colors, products } from '../data';
+import { colors } from '../data';
 import { Layers } from 'lucide-react';
 
-const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct }) => (
+const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct, productsList, onAddClick }) => (
   <section id="products" aria-label="Katalog produk Florisse" className="py-32 bg-white">
     <div className="max-w-7xl mx-auto px-6">
       <div className="text-center mb-20">
@@ -20,7 +20,7 @@ const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct }) =
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-        {products.filter(p => activeFilter === 'Semua' || (Array.isArray(p.category) ? p.category.includes(activeFilter) : p.category === activeFilter)).map((product) => (
+        {productsList.filter(p => activeFilter === 'Semua' || (Array.isArray(p.category) ? p.category.includes(activeFilter) : p.category === activeFilter)).map((product) => (
           <motion.div
             key={product.id}
             layout
@@ -75,6 +75,25 @@ const CatalogSection = ({ activeFilter, setActiveFilter, setSelectedProduct }) =
             <p className="font-black text-lg" style={{ color: colors.peach }}>{product.price}</p>
           </motion.div>
         ))}
+
+        {/* Visual Placeholder Card for Admin to Add New Products */}
+        <motion.div
+          layout
+          onClick={onAddClick}
+          className="group cursor-pointer border-3 border-dashed border-slate-200 rounded-[2rem] p-8 flex flex-col items-center justify-center min-h-[350px] hover:border-[#f8b1d2] hover:bg-slate-50/50 transition-all duration-500 shadow-sm hover:shadow-lg bg-white"
+          role="button"
+          tabIndex={0}
+          aria-label="Tambah Produk Baru (Admin)"
+          onKeyDown={(e) => e.key === 'Enter' && onAddClick()}
+        >
+          <div className="w-16 h-16 rounded-full bg-slate-50 group-hover:bg-[#f8b1d2]/10 flex items-center justify-center mb-6 transition-colors duration-500">
+            <span className="text-3xl text-slate-400 group-hover:text-[#f8b1d2] font-light transition-colors duration-500">+</span>
+          </div>
+          <h3 className="text-xl font-bold text-slate-700 mb-2 group-hover:text-[#f8b1d2] transition-colors duration-500">Tambah Produk Baru</h3>
+          <p className="text-xs text-slate-400 text-center max-w-[220px] leading-relaxed">
+            (Admin) Klik untuk mensimulasikan produk baru atau membuat kode data.js secara rahasia.
+          </p>
+        </motion.div>
       </div>
     </div>
   </section>

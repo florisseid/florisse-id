@@ -9,6 +9,9 @@ import ProductDetail from './components/ProductDetail';
 import CollabDetail from './components/CollabDetail';
 import Footer from './components/Footer';
 import FlowerLoader from './components/Loader';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
+import { products as initialProducts, collaborations as initialCollabs } from './data';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -21,6 +24,57 @@ const App = () => {
     }, 2800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Persistent dynamic states
+  const [productsList, setProductsList] = useState(() => {
+    const localData = localStorage.getItem('florisse_products');
+    return localData ? JSON.parse(localData) : initialProducts;
+  });
+
+  const [collabsList, setCollabsList] = useState(() => {
+    const localData = localStorage.getItem('florisse_collaborations');
+    return localData ? JSON.parse(localData) : initialCollabs;
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem('florisse_products', JSON.stringify(productsList));
+  }, [productsList]);
+
+  useEffect(() => {
+    localStorage.setItem('florisse_collaborations', JSON.stringify(collabsList));
+  }, [collabsList]);
+
+  // SPA Hash Router
+  const [hash, setHash] = useState(window.location.hash);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setHash(window.location.hash);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Admin Auth State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    return localStorage.getItem('florisse_admin_auth') === 'true';
+  });
+
+  const handleLoginSuccess = () => {
+    setIsAdminLoggedIn(true);
+    localStorage.setItem('florisse_admin_auth', 'true');
+  };
+
+  const handleLogout = () => {
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('florisse_admin_auth');
+  };
+
+  const handleBackToHome = () => {
+    window.location.hash = '';
+  };
 
   const [activeFilter, setActiveFilter] = useState('Semua');
   const [scrolled, setScrolled] = useState(false);
@@ -56,13 +110,41 @@ const App = () => {
     }
   }, [hasOverlay]);
 
+  // Render Admin page conditionally if hash matches #admin
+  if (hash === '#admin') {
+    return (
+      <AnimatePresence mode="wait">
+        {isAdminLoggedIn ? (
+          <motion.div key="admin-dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <AdminDashboard
+              productsList={productsList}
+              setProductsList={setProductsList}
+              collabsList={collabsList}
+              setCollabsList={setCollabsList}
+              onLogout={handleLogout}
+              onBackToHome={handleBackToHome}
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="admin-login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <AdminLogin
+              onLoginSuccess={handleLoginSuccess}
+              onBackToHome={handleBackToHome}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // Render main storefront website
   return (
     <div className="min-h-screen font-sans bg-white text-slate-800 scroll-smooth">
       <AnimatePresence mode="wait">
         {loading && <FlowerLoader key="flower-loader" message="Bloom in Every Moment" />}
       </AnimatePresence>
 
-      <Navbar 
+      <Navbar
         scrolled={scrolled}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -73,25 +155,34 @@ const App = () => {
 
       <main>
         <Hero scrollToSection={scrollToSection} />
-        <CollaborationSection setSelectedCollab={setSelectedCollab} />
-        <CatalogSection activeFilter={activeFilter} setActiveFilter={setActiveFilter} setSelectedProduct={setSelectedProduct} />
+        <CollaborationSection 
+          setSelectedCollab={setSelectedCollab}
+          collabsList={collabsList}
+        />
+        <CatalogSection 
+          activeFilter={activeFilter} 
+          setActiveFilter={setActiveFilter} 
+          setSelectedProduct={setSelectedProduct} 
+          productsList={productsList}
+          onAddClick={() => { window.location.hash = '#admin'; }}
+        />
         <ContactSection />
       </main>
 
       <AnimatePresence>
         {selectedProduct && (
-          <ProductDetail 
-            product={selectedProduct} 
-            onBack={() => setSelectedProduct(null)} 
+          <ProductDetail
+            product={selectedProduct}
+            onBack={() => setSelectedProduct(null)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {selectedCollab && (
-          <CollabDetail 
-            collab={selectedCollab} 
-            onBack={() => setSelectedCollab(null)} 
+          <CollabDetail
+            collab={selectedCollab}
+            onBack={() => setSelectedCollab(null)}
           />
         )}
       </AnimatePresence>

@@ -1,0 +1,131 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from 'lucide-react';
+import { colors } from '../data';
+
+const AdminLogin = ({ onLoginSuccess, onBackToHome }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Simulated secure check
+    setTimeout(() => {
+      if (username.trim().toLowerCase() === 'admin' && password === 'florisseadmin2026') {
+        onLoginSuccess();
+      } else {
+        setError('Username atau Password yang Anda masukkan salah!');
+        setLoading(false);
+      }
+    }, 800);
+  };
+
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden px-4">
+      {/* Background elements for premium aesthetic */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#f8b1d2]/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#fbbaec]/10 blur-[120px] pointer-events-none" />
+
+      {/* Back button */}
+      <button
+        onClick={onBackToHome}
+        className="absolute top-6 left-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-700 transition-colors cursor-pointer group"
+      >
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        Kembali ke Beranda
+      </button>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, type: 'spring', damping: 20 }}
+        className="w-full max-w-md bg-white border border-slate-100/80 rounded-[2.5rem] shadow-xl shadow-slate-100 p-8 sm:p-10 relative z-10"
+      >
+        <div className="text-center mb-8">
+          <div className="inline-flex p-4 rounded-full bg-[#f8b1d2]/10 text-[#f8b1d2] mb-4">
+            <Lock size={32} />
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-slate-800 mb-2">Admin Florisse</h1>
+          <p className="text-sm text-slate-400">Silakan masuk untuk mengelola katalog produk dan kolaborasi</p>
+        </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs flex items-center gap-3"
+          >
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{error}</span>
+          </motion.div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Username</label>
+            <div className="relative">
+              <User className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+              <input
+                type="text"
+                required
+                disabled={loading}
+                placeholder="Masukkan username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm disabled:bg-slate-50 disabled:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                disabled={loading}
+                placeholder="Masukkan password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-12 pr-12 py-3.5 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm disabled:bg-slate-50 disabled:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+                className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-[#f8b1d2] hover:bg-[#fbbaec] active:scale-98 text-white text-xs font-bold uppercase tracking-widest rounded-2xl shadow-lg shadow-pink-100 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              'Masuk Sekarang'
+            )}
+          </button>
+        </form>
+
+        <div className="text-center mt-8 pt-6 border-t border-slate-50">
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest">Florisse.id &copy; 2026</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default AdminLogin;
