@@ -164,7 +164,6 @@ const App = () => {
           setActiveFilter={setActiveFilter} 
           setSelectedProduct={setSelectedProduct} 
           productsList={productsList}
-          onAddClick={() => { window.location.hash = '#admin'; }}
         />
         <ContactSection />
       </main>
