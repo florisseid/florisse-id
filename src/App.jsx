@@ -155,14 +155,14 @@ const App = () => {
 
       <main>
         <Hero scrollToSection={scrollToSection} />
-        <CollaborationSection 
+        <CollaborationSection
           setSelectedCollab={setSelectedCollab}
           collabsList={collabsList}
         />
-        <CatalogSection 
-          activeFilter={activeFilter} 
-          setActiveFilter={setActiveFilter} 
-          setSelectedProduct={setSelectedProduct} 
+        <CatalogSection
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          setSelectedProduct={setSelectedProduct}
           productsList={productsList}
         />
         <ContactSection />

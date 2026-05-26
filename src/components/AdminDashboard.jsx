@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShoppingBag, Users, Download, LogOut, Trash2, Plus, 
+import {
+  ShoppingBag, Users, Download, LogOut, Trash2, Plus,
   Sparkles, Check, Copy, X, Calendar, MapPin, Tag, Video, Image as ImageIcon,
   Edit
 } from 'lucide-react';
 import { colors } from '../data';
 
-const AdminDashboard = ({ 
-  productsList, 
-  setProductsList, 
-  collabsList, 
-  setCollabsList, 
+const AdminDashboard = ({
+  productsList,
+  setProductsList,
+  collabsList,
+  setCollabsList,
   onLogout,
-  onBackToHome 
+  onBackToHome
 }) => {
   const [activeTab, setActiveTab] = useState('products'); // 'products', 'collaborations', 'export'
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -39,6 +39,14 @@ const AdminDashboard = ({
   const [newBonus, setNewBonus] = useState('');
   const [newMaterial, setNewMaterial] = useState('');
   const [newKukerOption, setNewKukerOption] = useState('');
+
+  // Dynamic product categories
+  const [categoryOptions, setCategoryOptions] = useState(() => {
+    const saved = localStorage.getItem('florisse_categories');
+    return saved ? JSON.parse(saved) : ['Buket', 'Flower Box', 'Hampers', 'Collab Product'];
+  });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   // States for new collaboration form
   const [cName, setCName] = useState('');
@@ -288,6 +296,8 @@ export const socialLinks = [
   { name: 'Email', href: 'mailto:florisse.id@gmail.com' }
 ];
 
+export const categories = ${JSON.stringify(categoryOptions, null, 2)};
+
 export const products = [
 ${formattedProducts}
 ];
@@ -306,7 +316,7 @@ ${formattedCollabs}
 
   const handleDownloadFile = () => {
     const element = document.createElement("a");
-    const file = new Blob([generateFullDataJs()], {type: 'text/javascript'});
+    const file = new Blob([generateFullDataJs()], { type: 'text/javascript' });
     element.href = URL.createObjectURL(file);
     element.download = "data.js";
     document.body.appendChild(element);
@@ -329,13 +339,13 @@ ${formattedCollabs}
         </div>
 
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={onBackToHome}
             className="text-xs font-bold text-slate-500 hover:text-[#f8b1d2] transition-colors cursor-pointer hidden sm:block"
           >
             Lihat Website Utama
           </button>
-          
+
           <button
             onClick={onLogout}
             className="py-2.5 px-4 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-500 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border border-slate-100"
@@ -348,7 +358,7 @@ ${formattedCollabs}
 
       {/* Main Grid Area */}
       <div className="flex-1 max-w-7xl mx-auto w-full px-6 sm:px-12 py-8 flex flex-col md:flex-row gap-8">
-        
+
         {/* Left Side Navigation Panel */}
         <aside className="w-full md:w-64 shrink-0 space-y-2">
           <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-1">
@@ -393,7 +403,7 @@ ${formattedCollabs}
 
         {/* Right Side Content Panel */}
         <main className="flex-1 min-w-0">
-          
+
           {/* TAB 1: PRODUCTS MANAGER */}
           {activeTab === 'products' && (
             <div className="space-y-6">
@@ -424,7 +434,7 @@ ${formattedCollabs}
                     <h3 className="font-serif font-bold text-lg text-slate-800">
                       {editingProduct ? `Edit Produk: ${editingProduct.name}` : 'Katalog Produk Baru'}
                     </h3>
-                    <button 
+                    <button
                       onClick={handleCancelProduct}
                       className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"
                     >
@@ -460,16 +470,107 @@ ${formattedCollabs}
 
                       <div>
                         <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Kategori</label>
-                        <select
-                          value={pCategory}
-                          onChange={(e) => setPCategory(e.target.value)}
-                          className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm bg-white"
-                        >
-                          <option value="Buket">Buket</option>
-                          <option value="Flower Box">Flower Box</option>
-                          <option value="Hampers">Hampers</option>
-                          <option value="Collab Product">Collab Product</option>
-                        </select>
+                        <div className="flex gap-2 items-start">
+                          <select
+                            value={pCategory}
+                            onChange={(e) => setPCategory(e.target.value)}
+                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm bg-white"
+                          >
+                            {categoryOptions.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddCategory(!showAddCategory)}
+                            className={`py-3 px-4 rounded-2xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+                              showAddCategory
+                                ? 'bg-[#f8b1d2] text-white border-[#f8b1d2]'
+                                : 'bg-slate-50 hover:bg-[#f8b1d2] hover:text-white text-slate-500 border-slate-100'
+                            }`}
+                            title="Tambah kategori baru"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        {showAddCategory && (
+                          <div className="mt-2 flex gap-2 items-center animate-in fade-in">
+                            <input
+                              type="text"
+                              placeholder="Nama kategori baru..."
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const trimmed = newCategoryName.trim();
+                                  if (!trimmed) return;
+                                  if (categoryOptions.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+                                    alert('Kategori tersebut sudah ada.');
+                                    return;
+                                  }
+                                  const updated = [...categoryOptions, trimmed];
+                                  setCategoryOptions(updated);
+                                  localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                  setPCategory(trimmed);
+                                  setNewCategoryName('');
+                                  setShowAddCategory(false);
+                                }
+                              }}
+                              className="flex-1 px-4 py-2.5 rounded-2xl border border-dashed border-[#f8b1d2] focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 text-sm bg-pink-50/30"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const trimmed = newCategoryName.trim();
+                                if (!trimmed) return;
+                                if (categoryOptions.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+                                  alert('Kategori tersebut sudah ada.');
+                                  return;
+                                }
+                                const updated = [...categoryOptions, trimmed];
+                                setCategoryOptions(updated);
+                                localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                setPCategory(trimmed);
+                                setNewCategoryName('');
+                                setShowAddCategory(false);
+                              }}
+                              className="py-2.5 px-4 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                            >
+                              <Check size={14} /> Simpan
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }}
+                              className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-full transition-colors cursor-pointer"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        )}
+                        {categoryOptions.length > 4 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {categoryOptions.filter(c => !['Buket', 'Flower Box', 'Hampers', 'Collab Product'].includes(c)).map(cat => (
+                              <span key={cat} className="inline-flex items-center gap-1 bg-pink-50 border border-[#f8b1d2]/20 px-2.5 py-1 rounded-full text-[10px] text-[#f8b1d2] font-bold">
+                                {cat}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (pCategory === cat) setPCategory(categoryOptions[0]);
+                                    const updated = categoryOptions.filter(c2 => c2 !== cat);
+                                    setCategoryOptions(updated);
+                                    localStorage.setItem('florisse_categories', JSON.stringify(updated));
+                                  }}
+                                  className="text-red-400 hover:text-red-600 ml-0.5"
+                                  title={`Hapus kategori ${cat}`}
+                                >
+                                  <X size={10} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div>
@@ -843,7 +944,7 @@ ${formattedCollabs}
                     <h3 className="font-serif font-bold text-lg text-slate-800">
                       {editingCollab ? `Edit Kolaborasi: ${editingCollab.name}` : 'Kegiatan Kolaborasi Baru'}
                     </h3>
-                    <button 
+                    <button
                       onClick={handleCancelCollab}
                       className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"
                     >
@@ -1203,7 +1304,7 @@ ${formattedCollabs}
                   <Download size={16} />
                   Unduh Berkas data.js Terbaru
                 </button>
-                
+
                 <button
                   onClick={handleCopyCode}
                   className="py-4 px-6 border-2 border-slate-100 hover:border-[#f8b1d2]/40 hover:text-[#f8b1d2] text-slate-600 text-xs font-bold uppercase tracking-widest rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2"
@@ -1224,7 +1325,7 @@ ${formattedCollabs}
 
         </main>
       </div>
-      
+
       {/* Footer copyright admin panel */}
       <footer className="py-6 border-t border-slate-100 bg-white text-center mt-12">
         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Panel Admin Florisse &bull; Desain Premium Terenkripsi &copy; 2026</p>
