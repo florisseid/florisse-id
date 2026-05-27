@@ -30,6 +30,7 @@ const App = () => {
   const [productsList, setProductsList] = useState(initialProducts);
   const [collabsList, setCollabsList] = useState(initialCollabs);
   const [categoriesList, setCategoriesList] = useState(initialCategories);
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
 
   // Fetch initial data from Supabase if configured, otherwise fallback to data.js
   useEffect(() => {
@@ -48,7 +49,6 @@ const App = () => {
         if (categoriesData && categoriesData.length > 0) {
           const list = categoriesData.map(c => c.name);
           setCategoriesList(list);
-          localStorage.setItem('florisse_categories', JSON.stringify(list));
         }
 
         // 2. Fetch products
@@ -88,8 +88,12 @@ const App = () => {
           }));
           setCollabsList(formatted);
         }
+
+        // If we reached here without throwing, Supabase is connected
+        setIsSupabaseConnected(true);
       } catch (err) {
         console.error('Failed to fetch from Supabase:', err.message);
+        setIsSupabaseConnected(false);
       }
     };
 
@@ -174,6 +178,7 @@ const App = () => {
               setCollabsList={setCollabsList}
               categoriesList={categoriesList}
               setCategoriesList={setCategoriesList}
+              isSupabaseConnected={isSupabaseConnected}
               onLogout={handleLogout}
               onBackToHome={handleBackToHome}
             />

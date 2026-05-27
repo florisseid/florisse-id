@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag, Users, Download, LogOut, Trash2, Plus,
   Sparkles, Check, Copy, X, Calendar, MapPin, Tag, Video, Image as ImageIcon,
-  Edit
+  Edit, Loader2, Cloud, CloudOff, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { colors } from '../data';
 import { supabase } from '../supabaseClient';
@@ -15,6 +15,7 @@ const AdminDashboard = ({
   setCollabsList,
   categoriesList,
   setCategoriesList,
+  isSupabaseConnected,
   onLogout,
   onBackToHome
 }) => {
@@ -24,6 +25,13 @@ const AdminDashboard = ({
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCollab, setEditingCollab] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: string }
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   // States for new product form
   const [pName, setPName] = useState('');
@@ -85,6 +93,7 @@ const AdminDashboard = ({
 
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     const finalProduct = {
       name: pName || 'Buket Bunga Baru',
       category: pCategory,
@@ -99,31 +108,55 @@ const AdminDashboard = ({
       ...(pCategory === 'Hampers' && pKukerOptions.length > 0 ? { kukerOptions: pKukerOptions.filter(Boolean) } : {})
     };
 
-    if (editingProduct) {
-      // Optimistic local update
-      setProductsList(productsList.map(p => p.id === editingProduct.id ? { ...editingProduct, ...finalProduct } : p));
-      // Sync to Supabase
-      if (supabase) {
-        await supabase.from('products').update({
-          name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
-          image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
-          desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
-          material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
-        }).eq('id', editingProduct.id);
+    // Payload for Supabase (snake_case column names)
+    const dbPayload = {
+      name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
+      image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
+      desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
+      material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
+    };
+
+    try {
+      if (editingProduct) {
+        // Optimistic local update
+        setProductsList(productsList.map(p => p.id === editingProduct.id ? { ...editingProduct, ...finalProduct } : p));
+        // Sync to Supabase
+        if (supabase && isSupabaseConnected) {
+          const { error } = await supabase.from('products').update(dbPayload).eq('id', editingProduct.id);
+          if (error) throw error;
+        }
+        setEditingProduct(null);
+        showToast('success', `Produk "${finalProduct.name}" berhasil diperbarui!`);
+      } else {
+        if (supabase && isSupabaseConnected) {
+          // Insert and return the real auto-generated ID from Supabase
+          const { data: inserted, error } = await supabase.from('products').insert(dbPayload).select();
+          if (error) throw error;
+          if (inserted && inserted.length > 0) {
+            const row = inserted[0];
+            const formatted = {
+              ...row,
+              variants: Array.isArray(row.variants) ? row.variants : JSON.parse(row.variants || '[]'),
+              specs: Array.isArray(row.specs) ? row.specs : JSON.parse(row.specs || '[]'),
+              bonus: Array.isArray(row.bonus) ? row.bonus : JSON.parse(row.bonus || '[]'),
+              material: Array.isArray(row.material) ? row.material : JSON.parse(row.material || '[]'),
+              kukerOptions: Array.isArray(row.kuker_options) ? row.kuker_options : JSON.parse(row.kuker_options || '[]'),
+              bestSeller: row.best_seller
+            };
+            setProductsList([...productsList, formatted]);
+          }
+        } else {
+          // Offline fallback: use client-side ID
+          const newId = productsList.length > 0 ? Math.max(...productsList.map(p => p.id)) + 1 : 1;
+          setProductsList([...productsList, { id: newId, ...finalProduct }]);
+        }
+        showToast('success', `Produk "${finalProduct.name}" berhasil ditambahkan!`);
       }
-      setEditingProduct(null);
-    } else {
-      const newId = productsList.length > 0 ? Math.max(...productsList.map(p => p.id)) + 1 : 1;
-      setProductsList([...productsList, { id: newId, ...finalProduct }]);
-      // Sync to Supabase
-      if (supabase) {
-        await supabase.from('products').insert({
-          name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
-          image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
-          desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
-          material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
-        });
-      }
+    } catch (err) {
+      console.error('Product save error:', err.message);
+      showToast('error', `Gagal menyimpan produk: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
     setShowAddProduct(false);
     handleCancelProduct();
@@ -165,6 +198,7 @@ const AdminDashboard = ({
 
   const handleAddCollabSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     const collabPayload = {
       name: cName || 'Kelas Baru',
       type: cType,
@@ -186,18 +220,44 @@ const AdminDashboard = ({
       videoCover: collabPayload.video_cover
     };
 
-    if (editingCollab) {
-      setCollabsList(collabsList.map(c => c.id === editingCollab.id ? { ...editingCollab, ...localCollab } : c));
-      if (supabase) {
-        await supabase.from('collaborations').update(collabPayload).eq('id', editingCollab.id);
+    try {
+      if (editingCollab) {
+        setCollabsList(collabsList.map(c => c.id === editingCollab.id ? { ...editingCollab, ...localCollab } : c));
+        if (supabase && isSupabaseConnected) {
+          const { error } = await supabase.from('collaborations').update(collabPayload).eq('id', editingCollab.id);
+          if (error) throw error;
+        }
+        setEditingCollab(null);
+        showToast('success', `Kolaborasi "${localCollab.name}" berhasil diperbarui!`);
+      } else {
+        if (supabase && isSupabaseConnected) {
+          // Insert and return the real auto-generated ID from Supabase
+          const { data: inserted, error } = await supabase.from('collaborations').insert(collabPayload).select();
+          if (error) throw error;
+          if (inserted && inserted.length > 0) {
+            const row = inserted[0];
+            const formatted = {
+              ...row,
+              partner: Array.isArray(row.partner) ? row.partner : JSON.parse(row.partner || '[]'),
+              gallery: Array.isArray(row.gallery) ? row.gallery : JSON.parse(row.gallery || '[]'),
+              isComingSoon: row.is_coming_soon,
+              fullDesc: row.full_desc,
+              videoCover: row.video_cover
+            };
+            setCollabsList([...collabsList, formatted]);
+          }
+        } else {
+          // Offline fallback: use client-side ID
+          const newId = collabsList.length > 0 ? Math.max(...collabsList.map(c => c.id)) + 1 : 101;
+          setCollabsList([...collabsList, { id: newId, ...localCollab }]);
+        }
+        showToast('success', `Kolaborasi "${localCollab.name}" berhasil ditambahkan!`);
       }
-      setEditingCollab(null);
-    } else {
-      const newId = collabsList.length > 0 ? Math.max(...collabsList.map(c => c.id)) + 1 : 101;
-      setCollabsList([...collabsList, { id: newId, ...localCollab }]);
-      if (supabase) {
-        await supabase.from('collaborations').insert(collabPayload);
-      }
+    } catch (err) {
+      console.error('Collab save error:', err.message);
+      showToast('error', `Gagal menyimpan kolaborasi: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
     setShowAddCollab(false);
 
@@ -243,8 +303,14 @@ const AdminDashboard = ({
   const handleDeleteProduct = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini dari katalog?')) {
       setProductsList(productsList.filter(p => p.id !== id));
-      if (supabase) {
-        await supabase.from('products').delete().eq('id', id);
+      if (supabase && isSupabaseConnected) {
+        try {
+          const { error } = await supabase.from('products').delete().eq('id', id);
+          if (error) throw error;
+          showToast('success', 'Produk berhasil dihapus dari database.');
+        } catch (err) {
+          showToast('error', `Gagal menghapus produk: ${err.message}`);
+        }
       }
     }
   };
@@ -252,8 +318,14 @@ const AdminDashboard = ({
   const handleDeleteCollab = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus kolaborasi ini?')) {
       setCollabsList(collabsList.filter(c => c.id !== id));
-      if (supabase) {
-        await supabase.from('collaborations').delete().eq('id', id);
+      if (supabase && isSupabaseConnected) {
+        try {
+          const { error } = await supabase.from('collaborations').delete().eq('id', id);
+          if (error) throw error;
+          showToast('success', 'Kolaborasi berhasil dihapus dari database.');
+        } catch (err) {
+          showToast('error', `Gagal menghapus kolaborasi: ${err.message}`);
+        }
       }
     }
   };
@@ -357,7 +429,20 @@ ${formattedCollabs}
           </div>
           <div>
             <h1 className="text-xl font-serif font-bold text-slate-800">Florisse Admin Portal</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Dashboard &bull; Mode Pengelola</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Dashboard &bull; Mode Pengelola</p>
+              {isSupabaseConnected ? (
+                <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                  <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>
+                  <Cloud size={9} /> Cloud Sync Aktif
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-600 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                  <span className="relative flex h-1.5 w-1.5"><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400"></span></span>
+                  <CloudOff size={9} /> Mode Offline
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -410,17 +495,31 @@ ${formattedCollabs}
             </button>
           </div>
 
-          <div className="bg-white/80 p-6 rounded-3xl border border-slate-100/50 shadow-sm text-center hidden md:block">
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Simpan Hasil Kerja</p>
-            <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
-              Perubahan Anda disimpan di browser. Untuk memperbarui server web secara permanen, gunakan menu <strong>Ekspor data.js</strong>.
-            </p>
-            <button
-              onClick={() => setActiveTab('export')}
-              className="py-2.5 px-4 w-full bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-            >
-              Buka Halaman Ekspor
-            </button>
+          <div className={`p-6 rounded-3xl border shadow-sm text-center hidden md:block ${isSupabaseConnected ? 'bg-emerald-50/50 border-emerald-100/50' : 'bg-white/80 border-slate-100/50'}`}>
+            {isSupabaseConnected ? (
+              <>
+                <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-2 flex items-center justify-center gap-1.5"><Cloud size={12} /> Supabase Cloud</p>
+                <p className="text-[11px] text-emerald-700/70 leading-relaxed mb-4">
+                  Semua perubahan <strong>otomatis tersinkronisasi</strong> ke database cloud Supabase secara real-time. Tidak perlu ekspor manual.
+                </p>
+                <div className="py-2.5 px-4 w-full bg-emerald-100/50 text-emerald-600 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+                  <CheckCircle size={12} /> Sinkronisasi Aktif
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Mode Offline</p>
+                <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
+                  Supabase tidak terhubung. Perubahan hanya tersimpan di sesi browser ini. Gunakan menu <strong>Ekspor data.js</strong> untuk cadangan.
+                </p>
+                <button
+                  onClick={() => setActiveTab('export')}
+                  className="py-2.5 px-4 w-full bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Buka Halaman Ekspor
+                </button>
+              </>
+            )}
           </div>
         </aside>
 
@@ -534,7 +633,7 @@ ${formattedCollabs}
                                   }
                                   const updated = [...categoryOptions, trimmed];
                                   setCategoriesList(updated);
-                                  if (supabase) {
+                                  if (supabase && isSupabaseConnected) {
                                     await supabase.from('categories').insert({ name: trimmed });
                                   }
                                   setPCategory(trimmed);
@@ -556,7 +655,7 @@ ${formattedCollabs}
                                 }
                                 const updated = [...categoryOptions, trimmed];
                                 setCategoriesList(updated);
-                                if (supabase) {
+                                if (supabase && isSupabaseConnected) {
                                   await supabase.from('categories').insert({ name: trimmed });
                                 }
                                 setPCategory(trimmed);
@@ -587,7 +686,7 @@ ${formattedCollabs}
                                     if (pCategory === cat) setPCategory(categoryOptions[0]);
                                     const updated = categoryOptions.filter(c2 => c2 !== cat);
                                     setCategoriesList(updated);
-                                    if (supabase) {
+                                    if (supabase && isSupabaseConnected) {
                                       await supabase.from('categories').delete().eq('name', cat);
                                     }
                                   }}
@@ -867,9 +966,10 @@ ${formattedCollabs}
                     <div className="flex gap-4 pt-4 border-t border-slate-50">
                       <button
                         type="submit"
-                        className="flex-1 py-3.5 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white text-xs font-bold uppercase tracking-widest rounded-2xl shadow-lg transition-all cursor-pointer"
+                        disabled={isSaving}
+                        className="flex-1 py-3.5 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white text-xs font-bold uppercase tracking-widest rounded-2xl shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait flex items-center justify-center gap-2"
                       >
-                        Simpan ke Katalog
+                        {isSaving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : 'Simpan ke Katalog'}
                       </button>
                       <button
                         type="button"
@@ -1203,9 +1303,10 @@ ${formattedCollabs}
                     <div className="flex gap-4 pt-4 border-t border-slate-50">
                       <button
                         type="submit"
-                        className="flex-1 py-3.5 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white text-xs font-bold uppercase tracking-widest rounded-2xl shadow-lg transition-all cursor-pointer"
+                        disabled={isSaving}
+                        className="flex-1 py-3.5 bg-[#f8b1d2] hover:bg-[#fbbaec] text-white text-xs font-bold uppercase tracking-widest rounded-2xl shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait flex items-center justify-center gap-2"
                       >
-                        Simpan Kolaborasi
+                        {isSaving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : 'Simpan Kolaborasi'}
                       </button>
                       <button
                         type="button"
@@ -1295,20 +1396,32 @@ ${formattedCollabs}
                 <p className="text-xs text-slate-400">Salin atau unduh berkas data.js baru yang menggabungkan seluruh perubahan data Anda secara otomatis.</p>
               </div>
 
-              <div className="bg-amber-50 border border-amber-100 rounded-3xl p-5 text-amber-800 text-xs leading-relaxed space-y-2">
-                <p className="font-bold flex items-center gap-2 text-sm"><Sparkles size={16} className="text-amber-600 shrink-0" /> PENTING: Cara Menyimpan Perubahan secara Permanen</p>
-                <p>
-                  Karena website ini berjalan di sisi pengguna (*client-side*), data buket atau kolaborasi baru yang Anda tambahkan disimpan sementara di peramban internet (*localStorage*) Anda.
-                </p>
-                <p>
-                  Untuk menyimpannya secara <strong>permanen dan mempublikasikannya agar terlihat oleh semua pengunjung website</strong>:
-                </p>
-                <ol className="list-decimal pl-5 space-y-1.5 font-medium mt-2">
-                  <li>Klik tombol <strong>"Unduh Berkas data.js"</strong> di bawah untuk mengunduh kode data terbaru.</li>
-                  <li>Timpa berkas lama yang ada di folder proyek Anda di lokasi: <code>c:\laragon\www\florisse.id\src\data.js</code> dengan berkas yang baru saja diunduh.</li>
-                  <li>Lakukan kompilasi/deploy ulang ke server Netlify atau Vercel. Selesai!</li>
-                </ol>
-              </div>
+              {isSupabaseConnected ? (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-5 text-emerald-800 text-xs leading-relaxed space-y-2">
+                  <p className="font-bold flex items-center gap-2 text-sm"><Cloud size={16} className="text-emerald-600 shrink-0" /> Supabase Cloud Terhubung — Perubahan Otomatis Tersimpan</p>
+                  <p>
+                    Semua perubahan yang Anda buat melalui panel admin (tambah, edit, hapus produk/kolaborasi) <strong>langsung tersimpan secara permanen di database cloud Supabase</strong> dan terlihat oleh semua pengunjung website secara real-time.
+                  </p>
+                  <p>
+                    Fitur <strong>Ekspor data.js</strong> ini kini bersifat <strong>opsional sebagai cadangan (backup)</strong> — berguna jika Anda ingin menyimpan snapshot kode data lokal untuk arsip atau jika suatu saat ingin kembali ke mode offline.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-100 rounded-3xl p-5 text-amber-800 text-xs leading-relaxed space-y-2">
+                  <p className="font-bold flex items-center gap-2 text-sm"><CloudOff size={16} className="text-amber-600 shrink-0" /> Mode Offline — Supabase Tidak Terhubung</p>
+                  <p>
+                    Supabase tidak terhubung. Data yang Anda tambahkan hanya tersimpan di sesi browser saat ini dan akan hilang jika halaman dimuat ulang.
+                  </p>
+                  <p>
+                    Untuk menyimpannya secara <strong>permanen</strong>:
+                  </p>
+                  <ol className="list-decimal pl-5 space-y-1.5 font-medium mt-2">
+                    <li>Klik tombol <strong>"Unduh Berkas data.js"</strong> di bawah untuk mengunduh kode data terbaru.</li>
+                    <li>Timpa berkas lama yang ada di folder proyek Anda di lokasi: <code>c:\laragon\www\florisse.id\src\data.js</code> dengan berkas yang baru saja diunduh.</li>
+                    <li>Lakukan kompilasi/deploy ulang ke server. Selesai!</li>
+                  </ol>
+                </div>
+              )}
 
               <div className="bg-slate-900 text-slate-200 p-6 rounded-[2rem] border border-slate-800 font-mono text-xs overflow-x-auto shadow-inner relative group max-h-[400px]">
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1352,6 +1465,30 @@ ${formattedCollabs}
 
         </main>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-8 right-8 z-50 max-w-sm"
+          >
+            <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl border text-sm font-medium ${
+              toast.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              {toast.type === 'success' ? <CheckCircle size={18} className="text-emerald-500 shrink-0" /> : <AlertCircle size={18} className="text-red-500 shrink-0" />}
+              <span className="text-xs leading-relaxed">{toast.message}</span>
+              <button onClick={() => setToast(null)} className="ml-2 p-1 rounded-full hover:bg-black/5 transition-colors cursor-pointer shrink-0">
+                <X size={12} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer copyright admin panel */}
       <footer className="py-6 border-t border-slate-100 bg-white text-center mt-12">
