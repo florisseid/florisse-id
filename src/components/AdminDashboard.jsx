@@ -91,6 +91,48 @@ const AdminDashboard = ({
     reader.readAsDataURL(file);
   };
 
+  // Helper: Insert ke Supabase dengan auto-retry saat terjadi duplicate key error.
+  // Ketika data di-seed manual (misal ID 1-12), sequence auto-increment PostgreSQL
+  // bisa tertinggal dan menyebabkan konflik. Fungsi ini otomatis menghitung
+  // ID baru dari MAX(id)+1 dan retry insert.
+  const insertWithAutoId = async (tableName, payload, maxRetries = 3) => {
+    // Percobaan pertama: biarkan PostgreSQL auto-generate ID
+    const { data, error } = await supabase.from(tableName).insert(payload).select();
+    if (!error) return { data, error: null };
+
+    // Jika error bukan duplicate key, langsung kembalikan
+    const isDuplicateKey = error.message?.includes('duplicate key') || error.code === '23505';
+    if (!isDuplicateKey) return { data: null, error };
+
+    // Duplicate key terdeteksi — hitung ID baru dari MAX(id) yang ada
+    console.warn(`[${tableName}] Duplicate key detected, auto-fixing sequence...`);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const { data: rows } = await supabase
+        .from(tableName)
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1);
+
+      const maxId = (rows && rows.length > 0) ? rows[0].id : 0;
+      const newId = maxId + attempt; // +attempt untuk menghindari race condition
+
+      const { data: retryData, error: retryError } = await supabase
+        .from(tableName)
+        .insert({ ...payload, id: newId })
+        .select();
+
+      if (!retryError) {
+        console.log(`[${tableName}] Auto-fix berhasil dengan ID: ${newId}`);
+        return { data: retryData, error: null };
+      }
+
+      const isStillDuplicate = retryError.message?.includes('duplicate key') || retryError.code === '23505';
+      if (!isStillDuplicate) return { data: null, error: retryError };
+    }
+
+    return { data: null, error: { message: `Gagal insert setelah ${maxRetries} percobaan retry. Silakan reset sequence ID di Supabase SQL Editor.` } };
+  };
+
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -129,8 +171,8 @@ const AdminDashboard = ({
         showToast('success', `Produk "${finalProduct.name}" berhasil diperbarui!`);
       } else {
         if (supabase && isSupabaseConnected) {
-          // Insert and return the real auto-generated ID from Supabase
-          const { data: inserted, error } = await supabase.from('products').insert(dbPayload).select();
+          // Insert with auto-retry on duplicate key (self-healing sequence)
+          const { data: inserted, error } = await insertWithAutoId('products', dbPayload);
           if (error) throw error;
           if (inserted && inserted.length > 0) {
             const row = inserted[0];
@@ -231,8 +273,8 @@ const AdminDashboard = ({
         showToast('success', `Kolaborasi "${localCollab.name}" berhasil diperbarui!`);
       } else {
         if (supabase && isSupabaseConnected) {
-          // Insert and return the real auto-generated ID from Supabase
-          const { data: inserted, error } = await supabase.from('collaborations').insert(collabPayload).select();
+          // Insert with auto-retry on duplicate key (self-healing sequence)
+          const { data: inserted, error } = await insertWithAutoId('collaborations', collabPayload);
           if (error) throw error;
           if (inserted && inserted.length > 0) {
             const row = inserted[0];
