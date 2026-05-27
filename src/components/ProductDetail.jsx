@@ -99,7 +99,11 @@ const ProductDetail = ({ product, onBack }) => {
                       {product.material.map((s, i) => <li key={i}>• {s}</li>)}
                     </ul>
                   </div>
-                  {product.kukerOptions && (
+                  {product.kukerOptions && product.kukerOptions.length > 0 && (
+                    Array.isArray(product.category) 
+                      ? product.category.includes('Hampers') 
+                      : product.category === 'Hampers'
+                  ) && (
                     <div className="p-6 rounded-3xl border border-[#b7d7f7] bg-[#b7d7f7]/5">
                       <h4 className="font-bold mb-3 flex items-center gap-2 text-[#b7d7f7]"><Package size={18} /> Request Kuker</h4>
                       <ul className="text-sm space-y-2 text-slate-600">

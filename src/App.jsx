@@ -61,6 +61,7 @@ const App = () => {
           // Format arrays if stored as JSONB or text
           const formatted = productsData.map(p => ({
             ...p,
+            category: (typeof p.category === 'string' && p.category.startsWith('[')) ? JSON.parse(p.category) : p.category,
             variants: Array.isArray(p.variants) ? p.variants : JSON.parse(p.variants || '[]'),
             specs: Array.isArray(p.specs) ? p.specs : JSON.parse(p.specs || '[]'),
             bonus: Array.isArray(p.bonus) ? p.bonus : JSON.parse(p.bonus || '[]'),

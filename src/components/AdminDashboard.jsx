@@ -36,7 +36,7 @@ const AdminDashboard = ({
   // States for new product form
   const [pName, setPName] = useState('');
   const [pPrice, setPPrice] = useState('Rp 50.000');
-  const [pCategory, setPCategory] = useState('Buket');
+  const [pCategory, setPCategory] = useState(['Buket']);
   const [pImage, setPImage] = useState('1.jpeg');
   const [pVariants, setPVariants] = useState(['1.jpeg']);
   const [newVariant, setNewVariant] = useState('');
@@ -136,6 +136,7 @@ const AdminDashboard = ({
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+    const hasHampersCategory = pCategory.includes('Hampers');
     const finalProduct = {
       name: pName || 'Buket Bunga Baru',
       category: pCategory,
@@ -147,15 +148,22 @@ const AdminDashboard = ({
       specs: pSpecs.filter(Boolean),
       bonus: pBonus.filter(Boolean),
       material: pMaterial.filter(Boolean),
-      ...(pCategory === 'Hampers' && pKukerOptions.length > 0 ? { kukerOptions: pKukerOptions.filter(Boolean) } : {})
+      ...(hasHampersCategory && pKukerOptions.length > 0 ? { kukerOptions: pKukerOptions.filter(Boolean) } : {})
     };
 
     // Payload for Supabase (snake_case column names)
     const dbPayload = {
-      name: finalProduct.name, category: finalProduct.category, price: finalProduct.price,
-      image: finalProduct.image, variants: finalProduct.variants, best_seller: finalProduct.bestSeller,
-      desc: finalProduct.desc, specs: finalProduct.specs, bonus: finalProduct.bonus,
-      material: finalProduct.material, kuker_options: finalProduct.kukerOptions || []
+      name: finalProduct.name,
+      category: finalProduct.category.length === 1 ? finalProduct.category[0] : JSON.stringify(finalProduct.category),
+      price: finalProduct.price,
+      image: finalProduct.image,
+      variants: finalProduct.variants,
+      best_seller: finalProduct.bestSeller,
+      desc: finalProduct.desc,
+      specs: finalProduct.specs,
+      bonus: finalProduct.bonus,
+      material: finalProduct.material,
+      kuker_options: hasHampersCategory ? (finalProduct.kukerOptions || []) : []
     };
 
     try {
@@ -178,6 +186,7 @@ const AdminDashboard = ({
             const row = inserted[0];
             const formatted = {
               ...row,
+              category: (typeof row.category === 'string' && row.category.startsWith('[')) ? JSON.parse(row.category) : row.category,
               variants: Array.isArray(row.variants) ? row.variants : JSON.parse(row.variants || '[]'),
               specs: Array.isArray(row.specs) ? row.specs : JSON.parse(row.specs || '[]'),
               bonus: Array.isArray(row.bonus) ? row.bonus : JSON.parse(row.bonus || '[]'),
@@ -208,7 +217,7 @@ const AdminDashboard = ({
     setEditingProduct(product);
     setPName(product.name);
     setPPrice(product.price);
-    setPCategory(Array.isArray(product.category) ? product.category[0] : product.category);
+    setPCategory(Array.isArray(product.category) ? product.category : [product.category].filter(Boolean));
     setPImage(product.image);
     setPVariants(product.variants || [product.image]);
     setPDesc(product.desc);
@@ -225,7 +234,7 @@ const AdminDashboard = ({
     setShowAddProduct(false);
     setPName('');
     setPPrice('Rp 50.000');
-    setPCategory('Buket');
+    setPCategory(['Buket']);
     setPImage('1.jpeg');
     setPVariants(['1.jpeg']);
     setPDesc('');
@@ -633,28 +642,50 @@ ${formattedCollabs}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Kategori</label>
-                        <div className="flex gap-2 items-start">
-                          <select
-                            value={pCategory}
-                            onChange={(e) => setPCategory(e.target.value)}
-                            className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm bg-white"
-                          >
-                            {categoryOptions.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
+                        <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Kategori (Pilih 1 atau maksimal 2)</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {categoryOptions.map(cat => {
+                            const isSelected = pCategory.includes(cat);
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    if (pCategory.length > 1) {
+                                      setPCategory(pCategory.filter(c => c !== cat));
+                                    } else {
+                                      showToast('error', 'Minimal harus memilih 1 kategori.');
+                                    }
+                                  } else {
+                                    if (pCategory.length < 2) {
+                                      setPCategory([...pCategory, cat]);
+                                    } else {
+                                      showToast('error', 'Maksimal memilih 2 kategori.');
+                                    }
+                                  }
+                                }}
+                                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#f8b1d2] text-white border-[#f8b1d2] shadow-sm'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                }`}
+                              >
+                                {cat}
+                              </button>
+                            );
+                          })}
                           <button
                             type="button"
                             onClick={() => setShowAddCategory(!showAddCategory)}
-                            className={`py-3 px-4 rounded-2xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
+                            className={`py-2.5 px-3 rounded-2xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
                               showAddCategory
                                 ? 'bg-[#f8b1d2] text-white border-[#f8b1d2]'
-                                : 'bg-slate-50 hover:bg-[#f8b1d2] hover:text-white text-slate-500 border-slate-100'
+                                : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                             title="Tambah kategori baru"
                           >
-                            <Plus size={14} />
+                            <Plus size={14} /> Kategori Baru
                           </button>
                         </div>
                         {showAddCategory && (
@@ -678,7 +709,11 @@ ${formattedCollabs}
                                   if (supabase && isSupabaseConnected) {
                                     await supabase.from('categories').insert({ name: trimmed });
                                   }
-                                  setPCategory(trimmed);
+                                  if (pCategory.length < 2) {
+                                    setPCategory([...pCategory, trimmed]);
+                                  } else {
+                                    setPCategory([trimmed]);
+                                  }
                                   setNewCategoryName('');
                                   setShowAddCategory(false);
                                 }
@@ -700,7 +735,11 @@ ${formattedCollabs}
                                 if (supabase && isSupabaseConnected) {
                                   await supabase.from('categories').insert({ name: trimmed });
                                 }
-                                setPCategory(trimmed);
+                                if (pCategory.length < 2) {
+                                  setPCategory([...pCategory, trimmed]);
+                                } else {
+                                  setPCategory([trimmed]);
+                                }
                                 setNewCategoryName('');
                                 setShowAddCategory(false);
                               }}
@@ -725,7 +764,10 @@ ${formattedCollabs}
                                 <button
                                   type="button"
                                   onClick={async () => {
-                                    if (pCategory === cat) setPCategory(categoryOptions[0]);
+                                    if (pCategory.includes(cat)) {
+                                      const newSelection = pCategory.filter(c2 => c2 !== cat);
+                                      setPCategory(newSelection.length > 0 ? newSelection : [categoryOptions[0]]);
+                                    }
                                     const updated = categoryOptions.filter(c2 => c2 !== cat);
                                     setCategoriesList(updated);
                                     if (supabase && isSupabaseConnected) {
@@ -953,7 +995,7 @@ ${formattedCollabs}
                     </div>
 
                     {/* Hampers Kue Kering Options */}
-                    {pCategory === 'Hampers' && (
+                    {pCategory.includes('Hampers') && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
