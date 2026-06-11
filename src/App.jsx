@@ -113,19 +113,41 @@ const App = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Admin Auth State
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
-    return localStorage.getItem('florisse_admin_auth') === 'true';
-  });
+  // Admin Auth State — managed by Supabase Auth session
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    // 1. Cek session yang sudah ada saat app mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAdminLoggedIn(!!session);
+      setAuthLoading(false);
+    });
+
+    // 2. Listen untuk perubahan auth (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAdminLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLoginSuccess = () => {
+    // Session sudah di-set oleh Supabase secara otomatis via onAuthStateChange
+    // Tidak perlu manual setState karena listener di atas akan menghandle-nya
     setIsAdminLoggedIn(true);
-    localStorage.setItem('florisse_admin_auth', 'true');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setIsAdminLoggedIn(false);
-    localStorage.removeItem('florisse_admin_auth');
   };
 
   const handleBackToHome = () => {
@@ -168,6 +190,22 @@ const App = () => {
 
   // Render Admin page conditionally if hash matches #admin
   if (hash === '#admin') {
+    // Tampilkan loading saat mengecek session Supabase (hindari flash login page)
+    if (authLoading) {
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <span className="w-8 h-8 border-3 border-[#f8b1d2] border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Memeriksa sesi...</p>
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <AnimatePresence mode="wait">
         {isAdminLoggedIn ? (

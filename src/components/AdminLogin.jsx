@@ -1,29 +1,62 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowLeft, AlertCircle, ShieldCheck } from 'lucide-react';
 import { colors } from '../data';
+import { supabase } from '../supabaseClient';
 
 const AdminLogin = ({ onLoginSuccess, onBackToHome }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  // Map Supabase error messages to user-friendly Indonesian text
+  const getErrorMessage = (error) => {
+    const msg = error?.message?.toLowerCase() || '';
+    if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
+      return 'Email atau Password yang Anda masukkan salah!';
+    }
+    if (msg.includes('email not confirmed')) {
+      return 'Akun belum dikonfirmasi. Silakan hubungi administrator.';
+    }
+    if (msg.includes('too many requests') || msg.includes('rate limit')) {
+      return 'Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.';
+    }
+    if (msg.includes('network') || msg.includes('fetch')) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    }
+    return error?.message || 'Terjadi kesalahan. Silakan coba lagi.';
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Simulated secure check
-    setTimeout(() => {
-      if (username.trim().toLowerCase() === 'admin' && password === 'florisseadmin2026') {
-        onLoginSuccess();
-      } else {
-        setError('Username atau Password yang Anda masukkan salah!');
-        setLoading(false);
+    try {
+      if (!supabase) {
+        throw new Error('Koneksi ke Supabase belum dikonfigurasi. Periksa file .env Anda.');
       }
-    }, 800);
+
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      // Login berhasil — session dikelola oleh Supabase & App.jsx listener
+      if (onLoginSuccess) {
+        onLoginSuccess(data.session);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,7 +82,7 @@ const AdminLogin = ({ onLoginSuccess, onBackToHome }) => {
       >
         <div className="text-center mb-8">
           <div className="inline-flex p-4 rounded-full bg-[#f8b1d2]/10 text-[#f8b1d2] mb-4">
-            <Lock size={32} />
+            <ShieldCheck size={32} />
           </div>
           <h1 className="text-3xl font-serif font-bold text-slate-800 mb-2">Admin Florisse</h1>
           <p className="text-sm text-slate-400">Silakan masuk untuk mengelola katalog produk dan kolaborasi</p>
@@ -68,16 +101,16 @@ const AdminLogin = ({ onLoginSuccess, onBackToHome }) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Username</label>
+            <label className="block text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">Email</label>
             <div className="relative">
-              <User className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+              <Mail className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
               <input
-                type="text"
+                type="email"
                 required
                 disabled={loading}
-                placeholder="Masukkan username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Masukkan email admin"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:border-[#f8b1d2] focus:ring-0 outline-none text-slate-700 transition-colors text-sm disabled:bg-slate-50 disabled:text-slate-400"
               />
             </div>
@@ -121,6 +154,10 @@ const AdminLogin = ({ onLoginSuccess, onBackToHome }) => {
         </form>
 
         <div className="text-center mt-8 pt-6 border-t border-slate-50">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <Lock size={10} className="text-slate-300" />
+            <p className="text-[10px] text-slate-300 uppercase tracking-widest">Secured by Supabase Auth</p>
+          </div>
           <p className="text-[10px] text-slate-400 uppercase tracking-widest">Florisse.id &copy; 2026</p>
         </div>
       </motion.div>
